@@ -1,4 +1,4 @@
-FROM debian:wheezy
+FROM debian:buster
 
 ADD pkcs11-proxy.diff /pkcs11-proxy.diff
 
@@ -6,21 +6,19 @@ ADD pkcs11-proxy.diff /pkcs11-proxy.diff
 RUN apt-get -y update \
 	&& DEBIAN_FRONTEND=noninteractive \
 		apt-get -y install git dpkg-dev cmake cdbs debhelper libssl-dev \
-	&& git config --global user.email "darco@deepdarc.com" && git config --global user.name "Robert Quattlebaum" \
+	&& git config --global user.email "ivan.pechorin@gmail.com" && git config --global user.name "Ivan Pechorin" \
 	&& git clone https://github.com/SUNET/pkcs11-proxy.git \
 	&& cd pkcs11-proxy \
-	&& git checkout 0caa567d78a6d88365946399b68e3327969f3bff \
-	&& git cherry-pick 1c2954cde94a5d4ac87528bd90c29c6a24374f60 ae700e6e5201d5288c82c9834a708bc09e488afa \
 	&& git apply ../pkcs11-proxy.diff \
 	&& DEBIAN_FRONTEND=noninteractive dpkg-buildpackage \
 	&& cd / \
-	&& DEBIAN_FRONTEND=noninteractive dpkg -i pkcs11-daemon_0.4-1ubuntu3_amd64.deb pkcs11-proxy1_0.4-1ubuntu3_amd64.deb \
+	&& DEBIAN_FRONTEND=noninteractive dpkg -i pkcs11-daemon_0.4.1.5_amd64.deb pkcs11-proxy1_0.4.1.5_amd64.deb \
 	&& DEBIAN_FRONTEND=noninteractive apt-get -y purge git dpkg-dev cmake cdbs debhelper libssl-dev \
 	&& DEBIAN_FRONTEND=noninteractive apt-get -y autoremove \
 	&& DEBIAN_FRONTEND=noninteractive apt-get -y clean \
 	&& rm -fr pkcs11* \
-	&& mkdir /usr/lib/pkcs11-proxy \
-	&& cp /usr/lib/libpkcs11-proxy.* /usr/lib/pkcs11-proxy/ \
+	&& mkdir -p /usr/lib/pkcs11-proxy \
+	&& cp -p /usr/lib/libpkcs11-proxy.* /usr/lib/pkcs11-proxy/ \
 	&& true
 
 # Install softhsm
@@ -29,11 +27,11 @@ RUN apt-get -y update \
 		apt-get -y install softhsm
 
 # Initially configure the token
-RUN echo 0:/var/lib/softhsm/slot0.db > /etc/softhsm/softhsm.conf && softhsm --init-token --pin 123456 --so-pin 12345678 --slot 0 --label SoftHSMToken
+RUN /usr/bin/softhsm2-util --init-token --pin 123456 --so-pin 12345678 --slot 1 --label "SoftHSMToken"
 
 EXPOSE 54435
 ENV PKCS11_DAEMON_SOCKET="tcp://0.0.0.0:54435"
 VOLUME ["/usr/lib/pkcs11-proxy"]
 
-CMD ["/usr/bin/pkcs11-daemon", "/usr/lib/softhsm/libsofthsm.so"]
+CMD ["/usr/bin/pkcs11-daemon", "/usr/lib/softhsm/libsofthsm2.so"]
 
