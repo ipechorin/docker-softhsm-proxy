@@ -27,7 +27,7 @@ RUN apt-get -y update \
 		apt-get -y install softhsm
 
 # Initially configure the token
-RUN /usr/bin/softhsm2-util --init-token --pin 123456 --so-pin 12345678 --slot 1 --label "SoftHSMToken"
+RUN /usr/bin/softhsm2-util --init-token --pin 123456 --so-pin 12345678 --slot 0 --label "SoftHSMToken"
 
 EXPOSE 54435
 ENV PKCS11_DAEMON_SOCKET="tcp://0.0.0.0:54435"
